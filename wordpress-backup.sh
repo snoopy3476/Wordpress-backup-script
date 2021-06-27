@@ -66,7 +66,8 @@ fi
 
 
 # Check config file ownership & permissions
-SCRIPTPATH="$( cd -- '$(dirname \"$0\")' >/dev/null 2>&1 ; pwd -P )"
+SCRIPTBIN=$(readlink -f -- "$0")
+SCRIPTPATH=$(dirname "$SCRIPTBIN")
 
 MYSQL_INFO_FILE="$SCRIPTPATH/mysql-info.config"
 if [ -f "$MYSQL_INFO_FILE" ]
