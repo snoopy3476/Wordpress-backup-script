@@ -44,7 +44,7 @@ ARCHIVE_FILE_EXT="tar.gz"
 
 
 # check required binaries
-REQ_BIN_LIST="dirname pwd sudo stat chown basename readlink date grep sed systemctl mysqldump tar pigz rm"
+REQ_BIN_LIST="dirname pwd sudo stat chown basename readlink date grep sed systemctl mysqldump tar pv pigz rm"
 NOT_EXIST_BIN_LIST=""
 
 for REQ_BIN in $REQ_BIN_LIST
@@ -120,7 +120,10 @@ then
 	echo "No wp-config.php found in the wordpress-root ($WP_ROOT)!"
 	exit 1
 fi
-eval $(grep "^define" "$WP_ROOT/wp-config.php" | sed -e "s/define\s*(\s*'\([^']*\)'\s*,\s*\('[^']*'\|true\|false\)\s*)\s*;.*/\1=\2/g")
+eval $(\
+	grep "^define" "$WP_ROOT/wp-config.php" | \
+	sed -e "s/define\s*(\s*'\([^']*\)'\s*,\s*\('[^']*'\|true\|false\)\s*)\s*;.*/\1=\2/g"\
+	)
 source "$MYSQL_INFO_FILE" 2> /dev/null # import mysql user info from config file
 DB_USER="$MYSQL_ID"
 DB_PASSWORD="$MYSQL_PW"
@@ -175,7 +178,8 @@ then
 
 fi
 
-mysqldump --add-drop-table --single-transaction --routines --triggers --databases "$DB_NAME" -h "$DB_HOST" -u "$DB_USER" -p"$DB_PASSWORD" > "$DB_MYSQLDUMP"
+mysqldump --add-drop-table --single-transaction --routines --triggers --databases \
+	"$DB_NAME" -h "$DB_HOST" -u "$DB_USER" -p"$DB_PASSWORD" > "$DB_MYSQLDUMP"
 
 RET=$?
 if [ $RET -ne 0 ]
@@ -188,8 +192,16 @@ fi
 
 # Archive WP DB & Files
 echo Backing up WP...
+
+ESTIMATED_SIZE=$(( $(du -sb "$DB_MYSQLDUMP" | cut -f1) + $(du -sb "$WP_ROOT" | cut -f1) ))
+if ! [ "$ESTIMATED_SIZE" -gt 0 ] 2> /dev/null
+then
+	ESTIMATED_SIZE=0
+fi
+
 ARCHIVE_FILE="$ARCHIVE_FILE_BASENAME""$ARCHIVE_FILE_COMMENTS"."$ARCHIVE_FILE_EXT"
-tar -Pc "$DB_MYSQLDUMP" -C "$WP_ROOT" . | pigz > "$ARCHIVE_FILE"
+
+tar -Pc "$DB_MYSQLDUMP" -C "$WP_ROOT" . | pv -s "$ESTIMATED_SIZE" | pigz > "$ARCHIVE_FILE"
 
 RET=$?
 rm -f "$DB_MYSQLDUMP" 2> /dev/null # remove db dump after archive

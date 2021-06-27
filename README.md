@@ -2,6 +2,7 @@
 A shell script which creates a full backup of a Wordpress site
 ## Prerequisites (pkgs)
   - mysqldump
+  - pv
   - pigz
   - (And maybe other packages which are expected to be included in most of linux distributions)
 ## Prepare
