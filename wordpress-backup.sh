@@ -40,6 +40,7 @@
 DB_MYSQLDUMP=.db.mysqldump
 ARCHIVE_FILE_BASENAME="wparchive-$(date +'%y%m%d%H%M%S')"
 ARCHIVE_FILE_EXT="tar.gz"
+COMPRESSOR_CMD=pigz
 
 
 
@@ -58,7 +59,7 @@ done
 
 if [ -n "$NOT_EXIST_BIN_LIST" ]
 then
-	echo "Required binaries do not exist: $NOT_EXIST_BIN_LIST"
+	echo " - Required binaries do not exist: $NOT_EXIST_BIN_LIST"
 	exit 1
 fi
 
@@ -74,11 +75,11 @@ then
 	FILE_PERM=$(stat -c '%u:%g-%a' "$MYSQL_INFO_FILE")
 	if [ "$FILE_PERM" != "0:0-400" ] && [ "$FILE_PERM" != "0:0-600" ]
 	then
-		echo "The permissions of the mysql config file are not set properly!"
-		echo "Execute following commands before run the script:"
+		echo " - The permissions of the mysql config file are not set properly!"
+		echo "   Execute following commands before run the script:"
 		echo
-		echo "  $ sudo chown 0:0 \"$MYSQL_INFO_FILE\""
-		echo "  $ sudo chmod 600 \"$MYSQL_INFO_FILE\""
+		echo "   $ sudo chown 0:0 \"$MYSQL_INFO_FILE\""
+		echo "   $ sudo chmod 600 \"$MYSQL_INFO_FILE\""
 		echo
 		exit 1
 	fi
@@ -90,7 +91,7 @@ fi
 # Root check
 if [ "$UID" != "0" ]
 then
-	echo "Run as root user!"
+	echo "* Run as root!"
 	exit 1
 fi
 
@@ -117,7 +118,7 @@ fi
 # Load wp-config.php define vars
 if [ ! -f "$WP_ROOT/wp-config.php" ]
 then
-	echo "No wp-config.php found in the wordpress-root ($WP_ROOT)!"
+	echo " - No wp-config.php found in the wordpress-root ($WP_ROOT)!"
 	exit 1
 fi
 eval $(\
@@ -131,7 +132,7 @@ DB_PASSWORD="$MYSQL_PW"
 
 
 # Stop apache2
-echo Stopping apache2...
+echo " - Stopping apache2..."
 systemctl stop apache2
 RET=$?
 if [ $RET -ne 0 ]
@@ -142,37 +143,37 @@ fi
 
 
 
-# Dump WP DB
-echo Backing up DB...
+# Dump Wordpress DB
+echo " - Dumping Wordpress DB..."
 
 # check DB id/pw from prompt
 if [ -z "$DB_USER" ] || [ -z "$DB_PASSWORD" ]
 then
 	echo
-	echo "No DB id/password found in the config file."
+	echo " - No DB id/password found in the config file."
 	echo
-	echo "Set your DB id/password to the variables \$MYSQL_ID and \$MYSQL_PW"
-	echo "inside the mysql config file \"$MYSQL_INFO_FILE\""
-	echo "if you want to pass them automatically."
+	echo "   Set your DB id/password to the variables \$MYSQL_ID and \$MYSQL_PW"
+	echo "   inside the mysql config file \"$MYSQL_INFO_FILE\""
+	echo "   if you want to pass them automatically."
 	echo
-	echo "  Ex)"
-	echo "	MYSQL_ID='mysql-admin-account-id'"
-	echo "	MYSQL_PW='mysql-admin-account-pw'"
+	echo "     Ex)"
+	echo "          MYSQL_ID='mysql-admin-account-id'"
+	echo "          MYSQL_PW='mysql-admin-account-pw'"
 	echo
 
 
 	# get id from stdin
-	echo -n "Mysql admin ID: "
+	echo -n " - Mysql admin ID: "
 	read DB_USER
 	# get pw from stdin, without echo
-	echo -n "Mysql password: "
+	echo -n " - Mysql password: "
 	read -s DB_PASSWORD
 	echo
 
 	# recheck id/pw
 	if [ -z "$DB_USER" ] || [ -z "$DB_PASSWORD" ]
 	then
-		echo "Mysql ID and password cannot be empty!"
+		echo " - Mysql ID and password cannot be empty!"
 		exit 1
 	fi
 
@@ -190,8 +191,8 @@ fi
 
 
 
-# Archive WP DB & Files
-echo Backing up WP...
+# Archive Wordpress files & DB
+echo " - Archiving Wordpress files and DB..."
 
 ESTIMATED_SIZE=$(( $(du -sb "$DB_MYSQLDUMP" | cut -f1) + $(du -sb "$WP_ROOT" | cut -f1) ))
 if ! [ "$ESTIMATED_SIZE" -gt 0 ] 2> /dev/null
@@ -201,7 +202,7 @@ fi
 
 ARCHIVE_FILE="$ARCHIVE_FILE_BASENAME""$ARCHIVE_FILE_COMMENTS"."$ARCHIVE_FILE_EXT"
 
-tar -Pc "$DB_MYSQLDUMP" -C $(dirname "$WP_ROOT") $(basename "$WP_ROOT") | pv -s "$ESTIMATED_SIZE" | pigz > "$ARCHIVE_FILE"
+tar -Pc "$DB_MYSQLDUMP" -C $(dirname "$WP_ROOT") $(basename "$WP_ROOT") | pv -s "$ESTIMATED_SIZE" | "$COMPRESSOR_CMD" > "$ARCHIVE_FILE"
 
 RET=$?
 rm -f "$DB_MYSQLDUMP" 2> /dev/null # remove db dump after archive
@@ -214,7 +215,7 @@ fi
 
 
 # Restart apache2
-echo Starting apache2...
+echo " - Starting apache2..."
 systemctl start apache2
 RET=$?
 if [ $RET -ne 0 ]
@@ -232,8 +233,8 @@ fi
 chown "$SUDO_UID":"$SUDO_GID" "$ARCHIVE_FILE"
 
 
-echo "The current wordpress archive is stored to the following file:"
+echo " - The current wordpress archive is stored to the following file:"
 echo "   - '$ARCHIVE_FILE'"
 echo
-echo "DB dump file can be found at the root of the archive ($DB_MYSQLDUMP)"
+echo "   DB dump file can be found at the root of the archive ($DB_MYSQLDUMP)"
 echo
