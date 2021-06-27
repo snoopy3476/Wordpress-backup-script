@@ -38,8 +38,8 @@
 
 # config
 DB_MYSQLDUMP=.db.mysqldump
-BACKUP_FILE_BASENAME="wparchive_$(date +'%y%m%d-%H%M%S')"
-BACKUP_FILE_EXT="tar.gz"
+ARCHIVE_FILE_BASENAME="wparchive-$(date +'%y%m%d%H%M%S')"
+ARCHIVE_FILE_EXT="tar.gz"
 
 
 
@@ -109,7 +109,7 @@ fi
 WP_ROOT=$(readlink -f "$1")
 if [ -n "$2" ]
 then
-	BACKUP_FILE_COMMENTS="_[$2]"
+	ARCHIVE_FILE_COMMENTS="-[$2]"
 fi
 
 
@@ -188,8 +188,8 @@ fi
 
 # Archive WP DB & Files
 echo Backing up WP...
-BACKUP_FILE="BACKUP_FILE_BASENAME""$BACKUP_FILE_COMMENTS"."$BACKUP_FILE_EXT"
-tar -Pc "$DB_MYSQLDUMP" -C "$WP_ROOT" . | pigz > "$BACKUP_FILE"
+ARCHIVE_FILE="$ARCHIVE_FILE_BASENAME""$ARCHIVE_FILE_COMMENTS"."$ARCHIVE_FILE_EXT"
+tar -Pc "$DB_MYSQLDUMP" -C "$WP_ROOT" . | pigz > "$ARCHIVE_FILE"
 
 RET=$?
 rm -f "$DB_MYSQLDUMP" 2> /dev/null # remove db dump after archive
@@ -217,5 +217,11 @@ if [ -z "$SUDO_UID" ] || [ -z "$SUDO_GID" ]
 then
 	exit 1
 fi
-chown "$SUDO_UID":"$SUDO_GID" "$BACKUP_FILE"
+chown "$SUDO_UID":"$SUDO_GID" "$ARCHIVE_FILE"
 
+
+echo "The current wordpress archive is stored to the following file:"
+echo "   - '$ARCHIVE_FILE'"
+echo
+echo "DB dump file can be found at the root of the archive ($DB_MYSQLDUMP)"
+echo
