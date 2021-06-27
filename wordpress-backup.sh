@@ -201,7 +201,7 @@ fi
 
 ARCHIVE_FILE="$ARCHIVE_FILE_BASENAME""$ARCHIVE_FILE_COMMENTS"."$ARCHIVE_FILE_EXT"
 
-tar -Pc "$DB_MYSQLDUMP" -C "$WP_ROOT" . | pv -s "$ESTIMATED_SIZE" | pigz > "$ARCHIVE_FILE"
+tar -Pc "$DB_MYSQLDUMP" -C $(dirname "$WP_ROOT") $(basename "$WP_ROOT") | pv -s "$ESTIMATED_SIZE" | pigz > "$ARCHIVE_FILE"
 
 RET=$?
 rm -f "$DB_MYSQLDUMP" 2> /dev/null # remove db dump after archive
