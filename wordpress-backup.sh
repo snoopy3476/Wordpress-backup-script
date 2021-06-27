@@ -1,5 +1,41 @@
 #!/bin/bash
 
+#
+#   [wordpress-backup.sh]
+#       - by snoopy3476@outlook.com
+#
+#     A backup script which archives both Wordpress DB & Wordpress files.
+#
+#
+#
+# - Usage
+#
+#   $ sudo ./wordpress-backup.sh <wordpress-root> [comments (optional)]
+#
+#   ex)
+#     $ sudo ./wordpress-backup.sh /var/www/html/
+#     $ sudo ./wordpress-backup.sh /var/www/html/wordpress-dir "wordpress-v5.7.2"
+#
+#
+#
+# - Job list
+#
+#   1. Stop apache
+#   2. Dump Mysql Wordpress DB to .db.mysqldump
+#   3. Archive and compress both DB dumpfile (.db.mysqldump) & and Wordpress root directory
+#   4. Start apache
+#
+#
+#
+# - mysql-info.config
+#
+#   If you copy 'mysql-info.config.template' to 'mysql-info.config',
+#   (with both owner uid/gid to 0 (root) + permission 600)
+#   then the ID/PW in the mysql-info.config will be used instead of being prompted on every script run.
+#
+
+
+
 # config
 DB_MYSQLDUMP=.db.mysqldump
 
@@ -61,7 +97,7 @@ fi
 # Help
 if [ "$#" -lt 1 ]
 then
-	echo "usage: $(basename $0) <wordpress-root> [comments]"
+	echo "usage: $0 <wordpress-root> [comments]"
 	exit 1
 fi
 
@@ -97,6 +133,7 @@ systemctl stop apache2
 RET=$?
 if [ $RET -ne 0 ]
 then
+	systemctl start apache2
 	exit $RET
 fi
 
@@ -143,6 +180,7 @@ mysqldump --add-drop-table --single-transaction --routines --triggers --database
 RET=$?
 if [ $RET -ne 0 ]
 then
+	systemctl start apache2
 	exit $RET
 fi
 
@@ -156,9 +194,9 @@ RET=$?
 rm -f "$DB_MYSQLDUMP" 2> /dev/null # remove db dump after archive
 if [ $RET -ne 0 ]
 then
+	systemctl start apache2
 	exit $RET
 fi
-
 
 
 

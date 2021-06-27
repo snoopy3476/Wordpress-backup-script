@@ -1,3 +1,16 @@
+#
+#     [mysql-info.config]
+#
+#   If you copy this file to 'mysql-info.config',
+#   (with both owner uid/gid to 0 (root) + permission 600)
+#       Ex) sudo chown 0:0 mysql-info.config; sudo chmod 600 mysql-info.config
+#
+#   then the ID/PW below will be used on each script run.
+#   If the mysql config file does not exist, then ID/PW will be prompt on each run.
+#
+
+
+
 ######## MYSQL ADMIN ID/PW - FILL TO ENTER MYSQL ID/PW AUTOMATICALLY ########
 MYSQL_ID=''
 MYSQL_PW=''
