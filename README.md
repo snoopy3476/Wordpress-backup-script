@@ -1,5 +1,9 @@
 # Wordpress Backup
 A shell script which creates a full backup of a Wordpress site
+## Prerequisites (pkgs)
+  - mysqldump
+  - pigz
+  - (And maybe other packages which are expected to be included in most of linux distributions)
 ## Prepare
   - Create a new mysql user account which has admin privilege to backup wordpress data, if does not exist
   - If you want to enter mysql admin ID/PW automatically on each script run,
@@ -13,5 +17,5 @@ A shell script which creates a full backup of a Wordpress site
   - **wordpress-root-dir**: Root directory of the wordpress
   - **comments-for-the-backup**: (Optional) Comments to append to the backup filename
 ## Job lists of the script
-  - **Dump Wordpress DB**: Make a whole dump of wordpress DB (mysql)
-  - **Backup Wordpress Data Files**: Archive and compress the DB dumpfile above the wordpress root dir
+  - **Dump Wordpress DB**: Make a whole dump of wordpress Mysql DB (.db.mysqldump)
+  - **Backup Wordpress Data Files**: Archive and compress the DB dumpfile above & the wordpress root dir
